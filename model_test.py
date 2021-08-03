@@ -16,8 +16,8 @@ def get_font_family():
         # Linux
         # colab에서는 runtime을 꼭 재시작 해야합니다.
         # 런타임을 재시작 하지 않고 폰트 설치를 하면 기본 설정 폰트가 로드되어 한글이 깨집니다.
-        #!apt-get update -qq
-        #!apt-get install fonts-nanum -qq > /dev/null
+        # !apt-get update -qq
+        # !apt-get install fonts-nanum -qq > /dev/null
         
         import matplotlib.font_manager as fm
         
@@ -28,9 +28,7 @@ def get_font_family():
         
     return font_family
 
-# https://www.youtube.com/watch?v=9ovF2bqMME4
-# 유튜버 "todaycode오늘코드"님의 영상 < KRX분석 [6/13] 데이터 시각화 도구 소개와 한글 폰트 설정 >
-# 데이콘에서는 "Visualising Korea"로 활동하시는 듯 합니다.
+### import ### 
 
 import itertools
 import warnings
@@ -44,12 +42,17 @@ from tqdm.notebook import tqdm
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.arima.model import ARIMA, ARIMAResults
 import statsmodels.api as sm
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error
+
 
 font_family = get_font_family()
 plt.rc("font", family=font_family)
 path = './_data/energy/'
+
+### data ###
 
 train = pd.read_csv(path + 'train.csv', encoding='CP949')
 test = pd.read_csv(path + 'test.csv', encoding='CP949')
@@ -63,16 +66,13 @@ test.set_index('date_time', drop=True, inplace=True)
 
 # 자료
 print("자료 : ", train.columns.tolist())
+# 자료 :  ['num', '전력사용량(kWh)', '기온(°C)', '풍속(m/s)', '습도(%)', '강수량(mm)', '일조(hr)', '비전기냉방설비운영', '태양광보유']
 
 # 기간
 print("기간 : 분석기간(", train.index[0], "~", train.index[train.shape[0]-1], "), 예측기간(", test.index[0], "~", test.index[test.shape[0]-1], ")")
+# 기간 : 분석기간( 2020-06-01 00:00:00 ~ 2020-08-24 23:00:00 ), 예측기간( 2020-08-25 00:00:00 ~ 2020-08-31 23:00:00 )
 
-# 분석내용
-print("분석내용 : 기간, 기상요소 반영 전후의 전국 전력사용량 예측 오차 분석")
-
-# https://rfriend.tistory.com/494
-# UDF of Resampling by column name, time span and summary functions
-
+### 시계열 데이터를 특정 시간 단위 구간별로 요약 통계량 구하는 사용자 정의 함수 ###
 
 def resample_summary(ts_data, col_nm, time_span, func_list):
     
@@ -117,30 +117,20 @@ def resample_summary(ts_data, col_nm, time_span, func_list):
 
     return df_summary
 
+    
 func_list = ['mean', 'min', 'max', 'var', '_stddev']
 rs = resample_summary(train, '전력사용량(kWh)', '1D', func_list)
-# ts_data = train
-# col_nm : 전력사용량(kWh)
-# time_span : 1D *하루단위
-
-
-# 일 별 평균 전력사용량
-plt.figure(figsize=(15, 5))
-plt.title('평균 전력 사용량')
-rs['전력사용량(kWh)_1D_mean'].plot()
-
-plt.show()
-
-################################################################
 
 train = pd.read_csv(path + 'train.csv', encoding='CP949')
 test = pd.read_csv(path + 'test.csv', encoding='CP949')
 submission = pd.read_csv(path + 'sample_submission.csv')
 
+# 결측치 0으로 대체
 train['비전기냉방설비운영'].fillna(0, inplace=True)
 train['태양광보유'].fillna(0, inplace=True)
 
-# 시각화를 위해 split 해줍니다.
+
+# 시각화를 위해 split 해준다.
 val = train.query('"2020-08-18" <= date_time < "2020-08-25"')
 train = train.query('"2020-06-01" <= date_time < "2020-08-18"')
 
@@ -151,47 +141,11 @@ def df2d_to_array3d(df_2d):
     sample_size=len(df_2d.num.value_counts())
     return df_2d.iloc[:,2:].values.reshape([sample_size, time_size, feature_size])
 
-# 전력소비량만을 사용했을 경우
-
-train_x_array=df2d_to_array3d(train)
-test_x_array=df2d_to_array3d(val)
-
-print(train_x_array.shape) # (60, 1872, 8)
-print(test_x_array.shape) # (60, 168, 8)
-
-idx=1
-x_series=train_x_array[idx, :, 0]
-model=ARIMA(x_series, order=(3, 0, 1))
-fit=model.fit()
-
-preds=fit.predict(1, 168, typ='levels')
-
-# 예측 시각화
-plt.figure(figsize=(10, 5))
-plt.plot(x_series, label = 'input_series')
-plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
-plt.plot(np.arange(1872, 1872+168), preds, label='prediction')
-plt.legend()
-
-plt.show()
-
-# 확대 보기
-plt.figure(figsize=(10, 5))
-plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
-plt.plot(np.arange(1872, 1872+168), preds, label='prediction')
-plt.legend()
-plt.show()
-
-#########################################################################
-# 기간 세분화 & 기상요소 다양화 반영을 하였을 경우
-# 체감온도와 불쾌지수 파생변수 생성: 불쾌지수는 간단한 식이 있어 이를 이용하였다.
-# https://www.weather.go.kr/plus/life/li_asset/HELP/basic/help_01_07.jsp
-# http://www.psychiatricnews.net/news/articleView.html?idxno=10116
 
 def get_pow(series):
     return math.pow(series, 0.15)
 
-train['perceived_temperature'] = 13.12 + 0.6215*train['기온(°C)'] - 11.37*train['풍속(m/s)'].apply(get_pow) + 0.3965*train['풍속(m/s)'].apply(get_pow)*train['기온(°C)']
+train['perceived_temperature'] = 13.12 + 0.6215*train['기온(°C)'] - 11.37*train['풍속(m/s)'].apply(get_pow) + 0.3965*train['풍속(m/s)'].apply(get_pow)*train['기온(°C)'] 
 train['discomfort_index'] = 1.8*train['기온(°C)'] - 0.55*(1-train['습도(%)'])*(1.8*train['기온(°C)']-26) + 32
 
 val['perceived_temperature'] = 13.12 + 0.6215*val['기온(°C)'] - 11.37*val['풍속(m/s)'].apply(get_pow) + 0.3965*val['풍속(m/s)'].apply(get_pow)*val['기온(°C)']
@@ -225,6 +179,7 @@ test_x_array=df2d_to_array3d(val)
 print(train_x_array.shape)
 print(test_x_array.shape)
 
+
 idx=1
 
 x_series=train_x_array[idx, :, 0]
@@ -235,14 +190,15 @@ val_else = test_x_array[idx, :, 1:]
 
 mod = sm.tsa.statespace.SARIMAX(x_series,
                                 x_else,
-                                order=(3, 0, 1),
+                                order=(0,0,0),
                                 seasonal_order=(0, 0, 0, 0))
 results = mod.fit()
 
 print(results.summary().tables[1])
 
-pred = results.predict(start = 1872, end = 2039, exog=val_else, dynamic= True)
 
+pred = results.predict(start = 1872, end = 2039, exog=val_else, dynamic= True)
+ 
 # 예측 결과 시각화
 plt.figure(figsize=(10, 5))
 plt.plot(x_series, label = 'input_series')
@@ -251,10 +207,54 @@ plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
 plt.legend()
 plt.show()
 
-
 # 더 자세하게 보면 다음과 같습니다.
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
 plt.legend()
 plt.show()
+
+print('기간 세분화 & 기상요소 다양화 반영 mae : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) # 216.42659428701504
+print('기간 세분화 & 기상요소 다양화 반영 R2 : ', r2_score(test_x_array[idx, :, 0], pred)) # 0.6040675014510193
+
+'''
+order=(0,0,0)
+seasonal_order=(0, 0, 0, 0))
+기간 세분화 & 기상요소 다양화 반영 mae :  199.7081345946761
+기간 세분화 & 기상요소 다양화 반영 R2 :  0.7101115801081498
+
+order=(0,0,1),
+seasonal_order=(0, 0, 0, 0))
+기간 세분화 & 기상요소 다양화 반영 mae :  203.21908184161188
+기간 세분화 & 기상요소 다양화 반영 R2 :  0.6924044531955753
+
+order=(0,0,2),
+seasonal_order=(0, 0, 0, 0))
+기간 세분화 & 기상요소 다양화 반영 mae :  205.01772609783083
+기간 세분화 & 기상요소 다양화 반영 R2 :  0.6830923948492192
+
+order=(0,0,3),
+seasonal_order=(0, 0, 0, 0))
+기간 세분화 & 기상요소 다양화 반영 mae :  209.3340015131347
+기간 세분화 & 기상요소 다양화 반영 R2 :  0.6555804977218336
+
+order=(0,1,0),
+seasonal_order=(0, 0, 0, 0))
+기간 세분화 & 기상요소 다양화 반영 mae :  262.3296264847448
+기간 세분화 & 기상요소 다양화 반영 R2 :  0.1160467576672386
+
+order=(1,0,0),
+seasonal_order=(0, 0, 0, 0))
+기간 세분화 & 기상요소 다양화 반영 mae :  339.92217384163166
+기간 세분화 & 기상요소 다양화 반영 R2 :  0.19663481002351535
+
+order=(0,0,0),
+seasonal_order=(2, 2, 12, 2))
+기간 세분화 & 기상요소 다양화 반영 mae :  316.31162499831424
+기간 세분화 & 기상요소 다양화 반영 R2 :  -0.08874561759491284
+
+order=(0,0,0),
+seasonal_order=(2, 2, 2, 2))
+기간 세분화 & 기상요소 다양화 반영 mae :  277.6379056405458
+기간 세분화 & 기상요소 다양화 반영 R2 :  0.010451429068208062
+'''
