@@ -128,17 +128,21 @@ submission = pd.read_csv(path + 'sample_submission.csv')
 ########################################################################
 
 # 결측치 처리
+
 sun = train.groupby('num')['태양광보유'].unique()
 non_ele = train.groupby('num')['비전기냉방설비운영'].unique()
-
 test['태양광보유'] = test['num'].map(sun).astype(int)
 test['비전기냉방설비운영'] = test['num'].map(non_ele).astype(int)
+
 test = test.interpolate()
 
 
 # 시각화를 위해 split 해준다.
 val = train.query('"2020-08-18" <= date_time < "2020-08-25"')
 train = train.query('"2020-06-01" <= date_time < "2020-08-18"')
+
+print(train.shape)
+print(test.shape)
 
 #2d의 데이터프레임을 건물별 정보를 반영한 3d 데이터로 변환
 def df2d_to_array3d(df_2d):
@@ -171,6 +175,8 @@ plt.figure(figsize=(10, 5))
 plt.plot(x_series, label = 'input_series')
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh")
 plt.legend()
 plt.title('전력소비량')
 plt.show()
@@ -179,11 +185,13 @@ plt.show()
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh")
 plt.legend()
 plt.title('전력소비량')
 plt.show()
 
-print('전력소비량 : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) # 247.75768253496452
+print('전력소비량 mae : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) # 247.75768253496452
 print('전력소비량 R2 : ', r2_score(test_x_array[idx, :, 0], pred))
 
 
@@ -212,6 +220,8 @@ plt.figure(figsize=(10, 5))
 plt.plot(x_series, label = 'input_series')
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh")
 plt.legend()
 plt.title('전력소비량, 기온, 습도, 강수량, 일조')
 plt.show()
@@ -220,6 +230,8 @@ plt.show()
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh")
 plt.legend()
 plt.title('전력소비량, 기온, 습도, 강수량, 일조')
 plt.show()
@@ -253,6 +265,8 @@ plt.plot(x_series, label = 'input_series')
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
 plt.legend()
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh")
 plt.title('전력소비량, 기온, 습도, 강수량, 일조, 비전기냉방설비운영, 태양광보유')
 plt.show()
 
@@ -261,6 +275,8 @@ plt.figure(figsize=(10, 5))
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
 plt.legend()
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh")
 plt.title('전력소비량, 기온, 습도, 강수량, 일조, 비전기냉방설비운영, 태양광보유')
 plt.show()
 
@@ -333,6 +349,9 @@ plt.figure(figsize=(10, 5))
 plt.plot(x_series, label = 'input_series')
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh)")
+plt.title('기상요소 다양화 반영')
 plt.legend()
 plt.show()
 
@@ -340,11 +359,14 @@ plt.show()
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh)")
+plt.title('기상요소 다양화 반영')
 plt.legend()
 plt.show()
 
-print('기간 세분화 & 기상요소 다양화 반영 mae : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) # 216.42659428701504
-print('기간 세분화 & 기상요소 다양화 반영 R2 : ', r2_score(test_x_array[idx, :, 0], pred)) # 0.6040675014510193
+print('기상요소 다양화 반영 mae : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) # 216.42659428701504
+print('기상요소 다양화 반영 R2 : ', r2_score(test_x_array[idx, :, 0], pred)) # 0.6040675014510193
 
 
 idx=1
@@ -369,6 +391,9 @@ plt.figure(figsize=(10, 5))
 plt.plot(x_series, label = 'input_series')
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
+plt.title('기상요소 다양화 반영 + 파라미터튜닝')
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh")
 plt.legend()
 plt.show()
 
@@ -376,11 +401,14 @@ plt.show()
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(1872, 1872+168), test_x_array[idx, :, 0], label='y')
 plt.plot(np.arange(1872, 1872+168), pred, label='prediction')
+plt.title('기상요소 다양화 반영 + 파라미터튜닝')
+plt.xlabel("시간(h)")
+plt.ylabel("전력소비량(kWh")
 plt.legend()
 plt.show()
 
-print('기간 세분화 & 기상요소 다양화 반영 mae : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) 
-print('기간 세분화 & 기상요소 다양화 반영 R2 : ', r2_score(test_x_array[idx, :, 0], pred)) 
+print('기상요소 다양화 반영 + 파라미터튜닝 mae : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) 
+print('기상요소 다양화 반영 + 파라미터튜닝 R2 : ', r2_score(test_x_array[idx, :, 0], pred)) 
 
 # 기간 세분화 & 기상요소 다양화 반영 mae :  199.7081345946761
 # 기간 세분화 & 기상요소 다양화 반영 R2 :  0.7101115801081498
