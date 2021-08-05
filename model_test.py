@@ -134,6 +134,13 @@ train['태양광보유'].fillna(0, inplace=True)
 val = train.query('"2020-08-18" <= date_time < "2020-08-25"')
 train = train.query('"2020-06-01" <= date_time < "2020-08-18"')
 
+corr = train.corr(method='pearson')
+print(corr)
+import seaborn as sns
+df_heatmap = sns.heatmap(corr, cbar = True, annot = True, annot_kws={'size' : 5}, fmt = '.2f', square = True, cmap = 'Blues')
+plt.show()
+
+
 #2d의 데이터프레임을 건물별 정보를 반영한 3d 데이터로 변환
 def df2d_to_array3d(df_2d):
     feature_size=df_2d.iloc[:,2:].shape[1]
@@ -144,6 +151,8 @@ def df2d_to_array3d(df_2d):
 
 def get_pow(series):
     return math.pow(series, 0.15)
+
+
 
 train['perceived_temperature'] = 13.12 + 0.6215*train['기온(°C)'] - 11.37*train['풍속(m/s)'].apply(get_pow) + 0.3965*train['풍속(m/s)'].apply(get_pow)*train['기온(°C)'] 
 train['discomfort_index'] = 1.8*train['기온(°C)'] - 0.55*(1-train['습도(%)'])*(1.8*train['기온(°C)']-26) + 32
@@ -170,17 +179,21 @@ def weekend(day):
 train['weekday'] = train['weekday'].apply(lambda x: weekend(x))
 val['weekday'] = val['weekday'].apply(lambda x: weekend(x))
 
+
+
 # train = train[['num', 'date_time', '전력사용량(kWh)', 'perceived_temperature', 'discomfort_index', 'weekday', 'hour']]
 # val = val[['num', 'date_time', '전력사용량(kWh)', 'perceived_temperature', 'discomfort_index', 'weekday', 'hour']]
+
+print(train)
 
 train_x_array=df2d_to_array3d(train)
 test_x_array=df2d_to_array3d(val)
 
-print(train_x_array.shape)
-print(test_x_array.shape)
+
 
 
 idx=1
+
 
 x_series=train_x_array[idx, :, 0]
 x_else = train_x_array[idx, :, 1:]
@@ -190,7 +203,7 @@ val_else = test_x_array[idx, :, 1:]
 
 mod = sm.tsa.statespace.SARIMAX(x_series,
                                 x_else,
-                                order=(0,0,0),
+                                order=(4,1,2),
                                 seasonal_order=(0, 0, 0, 0))
 results = mod.fit()
 

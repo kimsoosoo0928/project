@@ -125,6 +125,9 @@ train = pd.read_csv(path + 'train.csv', encoding='CP949')
 test = pd.read_csv(path + 'test.csv', encoding='CP949')
 submission = pd.read_csv(path + 'sample_submission.csv')
 
+def smape(act,forc):
+    return 100/len(act) * np.sum(2 * np.abs(forc - act) / (np.abs(act) + np.abs(forc)))
+
 ########################################################################
 
 # 결측치 처리
@@ -193,7 +196,12 @@ plt.show()
 
 print('전력소비량 mae : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) # 247.75768253496452
 print('전력소비량 R2 : ', r2_score(test_x_array[idx, :, 0], pred))
+result = smape(test_x_array[idx, :, 0],pred)
+print("SMAPE :",result)
 
+# 전력소비량 mae :  247.75768253496452
+# 전력소비량 R2 :  0.2724378018239805 
+# SMAPE : 16.450224238858638
 
 ### 2. 전력소비량, 기온, 습도, 강수량, 일조 ###
 
@@ -238,7 +246,12 @@ plt.show()
 
 print('전력소비량, 기온, 습도, 강수량, 일조 mae: ',mean_absolute_error(test_x_array[idx, :, 0], pred)) # 260.1700509858948
 print('전력소비량, 기온, 습도, 강수량, 일조 R2 : ', r2_score(test_x_array[idx, :, 0], pred))
+result = smape(test_x_array[idx, :, 0],pred)
+print("SMAPE :",result)
 
+# 전력소비량, 기온, 습도, 강수량, 일조 mae:  260.1700509858948
+# 전력소비량, 기온, 습도, 강수량, 일조 R2 :  0.4980684442377238
+# SMAPE : 17.859831957465033
 
 ### 3. 전력소비량, 기온, 습도, 강수량, 일조, 비전기냉방설비운영, 태양광보유 ###
 
@@ -282,7 +295,12 @@ plt.show()
 
 print('전력소비량, 기온, 습도, 강수량, 일조, 비전기냉방설비운영, 태양광보유 : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) # 270.2009681839721
 print('전력소비량, 기온, 습도, 강수량, 일조, 비전기냉방설비운영, 태양광보유 R2 : ', r2_score(test_x_array[idx, :, 0], pred))
+result = smape(test_x_array[idx, :, 0],pred)
+print("SMAPE :",result)
 
+# 전력소비량, 기온, 습도, 강수량, 일조, 비전기냉방설비운영, 태양광보유 :  270.2009681839721
+# 전력소비량, 기온, 습도, 강수량, 일조, 비전기냉방설비운영, 태양광보유 R2 :  0.503533040894115
+# SMAPE : 18.849769912114347
 
 ###########################################################################################################################################################################
 
@@ -322,9 +340,6 @@ val['weekday'] = val['weekday'].apply(lambda x: weekend(x))
 
 train_x_array=df2d_to_array3d(train)
 test_x_array=df2d_to_array3d(val)
-
-print(train_x_array.shape)
-print(test_x_array.shape)
 
 
 idx=1
@@ -367,7 +382,13 @@ plt.show()
 
 print('기상요소 다양화 반영 mae : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) # 216.42659428701504
 print('기상요소 다양화 반영 R2 : ', r2_score(test_x_array[idx, :, 0], pred)) # 0.6040675014510193
+result = smape(test_x_array[idx, :, 0],pred)
+print("SMAPE :",result)
 
+
+# 기상요소 다양화 반영 mae :  216.42659428701504
+# 기상요소 다양화 반영 R2 :  0.6040675014510193
+# SMAPE : 14.649786701127752
 
 idx=1
 
@@ -409,9 +430,17 @@ plt.show()
 
 print('기상요소 다양화 반영 + 파라미터튜닝 mae : ',mean_absolute_error(test_x_array[idx, :, 0], pred)) 
 print('기상요소 다양화 반영 + 파라미터튜닝 R2 : ', r2_score(test_x_array[idx, :, 0], pred)) 
+def smape(act,forc):
+    return 100/len(act) * np.sum(2 * np.abs(forc - act) / (np.abs(act) + np.abs(forc)))
+result = smape(test_x_array[idx, :, 0],pred)
+print("SMAPE :",result)
 
-# 기간 세분화 & 기상요소 다양화 반영 mae :  199.7081345946761
-# 기간 세분화 & 기상요소 다양화 반영 R2 :  0.7101115801081498
+
+# 기상요소 다양화 반영 + 파라미터튜닝 mae :  199.7081345946761
+# 기상요소 다양화 반영 + 파라미터튜닝 R2 :  0.7101115801081498
+# SMAPE : 13.934136345950142
+
+
 
 
 '''
@@ -455,3 +484,6 @@ seasonal_order=(2, 2, 2, 2))
 기간 세분화 & 기상요소 다양화 반영 mae :  277.6379056405458
 기간 세분화 & 기상요소 다양화 반영 R2 :  0.010451429068208062
 '''
+
+
+
