@@ -141,6 +141,9 @@ df_heatmap = sns.heatmap(corr, cbar = True, annot = True, annot_kws={'size' : 5}
 plt.show()
 
 
+print(train.columns)
+print(test.columns)
+
 #2d의 데이터프레임을 건물별 정보를 반영한 3d 데이터로 변환
 def df2d_to_array3d(df_2d):
     feature_size=df_2d.iloc[:,2:].shape[1]
@@ -189,7 +192,8 @@ print(train)
 train_x_array=df2d_to_array3d(train)
 test_x_array=df2d_to_array3d(val)
 
-
+print(train_x_array)
+print(test_x_array)
 
 
 idx=1

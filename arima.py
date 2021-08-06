@@ -144,27 +144,33 @@ test = test.interpolate()
 val = train.query('"2020-08-18" <= date_time < "2020-08-25"')
 train = train.query('"2020-06-01" <= date_time < "2020-08-18"')
 
-print(train.shape)
-print(test.shape)
+print('a',train.shape)
+print('a',test.shape)
+
 
 #2d의 데이터프레임을 건물별 정보를 반영한 3d 데이터로 변환
-def df2d_to_array3d(df_2d):
+def df2d_to_array3d_01(df_2d):
     feature_size=df_2d.iloc[:,2:].shape[1]
     time_size=len(df_2d['date_time'].value_counts())
     sample_size=len(df_2d.num.value_counts())
     return df_2d.iloc[:,2:].values.reshape([sample_size, time_size, feature_size])
 
 
+def df2d_to_array3d_02(df_2d):
+    feature_size=df_2d.iloc[:,1:].shape[1]
+    time_size=len(df_2d['date_time'].value_counts())
+    sample_size=len(df_2d.num.value_counts())
+    return df_2d.iloc[:,1:].values.reshape([sample_size, time_size, feature_size])
 
 ### 1. 전력소비량 ### 
 
-train_x_array=df2d_to_array3d(train)
-test_x_array=df2d_to_array3d(val)
+train_x_array=df2d_to_array3d_01(train)
+test_x_array=df2d_to_array3d_01(val)
+test_new = df2d_to_array3d_02(test)
 
-
-
-print(train_x_array.shape)
-print(test_x_array.shape)
+print('b',train_x_array.shape)
+print('b',test_x_array.shape)
+print('c',test_new.shape)
 
 idx=1 # 첫번째 건물
 x_series=train_x_array[idx, :, 0]
